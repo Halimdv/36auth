@@ -1,8 +1,7 @@
 <?php
 require 'config.php';
 
-
-var_dump($_SERVER);
+setcookie('cookie', 'test', time()+60*60*24*365, "/cours/36auth", "localhost", FALSE, TRUE);
 
 $valid = true;
 if(!isset($_SESSION['id'])){
@@ -53,14 +52,24 @@ if(!isset($_SESSION['id'])){
 		$password = password_hash( trim($_POST['password']), PASSWORD_DEFAULT, $options);
 		$email = trim($_POST['email']);
 		$date = time();
-		echo "ok";
-		$query = $db->prepare("INSERT INTO user(login, password,  email, date)
-		 VALUES(:login, :password, :email, :date)");
-		$query->bindValue(':login', $login, PDO::PARAM_STR);
-		$query->bindValue(':password', $password, PDO::PARAM_STR);
-		$query->bindValue(':email', $email, PDO::PARAM_STR);
-		$query->bindValue(':date', $date, PDO::PARAM_STR);
+		$query = $db->prepare("SELECT * FROM user WHERE login = :login");
+		$query->bindValue(":login", $login, PDO::PARAM_STR);
 		$query->execute();
+		if(!$query->rowCount()){
+			$query = $db->prepare("INSERT INTO user(login, password,  email, date)
+			 VALUES(:login, :password, :email, :date)");
+			$query->bindValue(':login', $login, PDO::PARAM_STR);
+			$query->bindValue(':password', $password, PDO::PARAM_STR);
+			$query->bindValue(':email', $email, PDO::PARAM_STR);
+			$query->bindValue(':date', $date, PDO::PARAM_STR);
+			if($query->execute()){
+				$_SESSION['id'] = $db->lastInsertId();
+				$_SESSION['login'] = $login;
+				header('location: '.$url);
+			}
+		} else {
+			echo "L'utilisateur existe déjà";
+		}
 	}
 
 ?>
@@ -70,6 +79,8 @@ if(!isset($_SESSION['id'])){
 	<input type="text" name="login"><br>
 	<label for="">Mot de passe</label>
 	<input type="text" name="password"><br>
+	<label for="">Se rappeler de moi</label>
+	<input type="checkbox" name="remember"><br>
 	<button name="loginValid">Se connecter</button>
 </form>
 
@@ -87,6 +98,11 @@ if(!isset($_SESSION['id'])){
 				$user = $query->fetch();
 				$valid = password_verify($password, $user['password']);
 				if($valid){
+					if(isset($_POST['remember'])){
+						$token = sha1(md5(uniqid().$_SERVER['REMOTE_ADDR']));
+						setcookie('remember', $token , time()+60*60*24);
+						$db->query('UPDATE FROM user SET token = $token WHERE id = '.$user['id']);
+					}
 					$_SESSION['id'] = $user['id'];
 					$_SESSION['login'] = $user['login'];
 					header('location: '.$url);
@@ -99,6 +115,8 @@ if(!isset($_SESSION['id'])){
 		}
 	}
 } else {
-	echo "Bonjour ".$_SESSION['login'];
-}
+	var_dump($_SESSION);
+	echo "Bonjour ".$_SESSION['login']; ?>
+	<a href="logout.php">Se déconnecter</a>
+<?php }
 ?>
