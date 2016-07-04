@@ -34,7 +34,7 @@ $valid = true;
 	<?php if(isset($_POST['submit']) && empty($_POST['cf-password'])){ 
     	$valid = false;
 		echo "Veuillez confirmer le mot de passe";
-	} elseif(isset($_POST['password']) && $_POST['password'] != $_POST['cf-password']) {
+	} elseif(isset($_POST['password']) && isset($_POST['cf-password']) && $_POST['password'] != $_POST['cf-password']) {
 		$valid = false;
 		echo "La confirmation est différente du mot de passe";
 	}?>
@@ -45,15 +45,51 @@ $valid = true;
 <?php
 if(isset($_POST['submit']) && $valid){
 	$options = array('cost' => 10);
-	$password = password_hash( $_POST['password'], PASSWORD_DEFAULT, $options);
+	$login = trim($_POST['login']);
+	$password = password_hash( trim($_POST['password']), PASSWORD_DEFAULT, $options);
+	$email = trim($_POST['email']);
+	$date = time();
 	echo "ok";
 	$query = $db->prepare("INSERT INTO user(login, password,  email, date)
 	 VALUES(:login, :password, :email, :date)");
-	$query->bindValue(':login', $_POST['login'], PDO::PARAM_STR);
+	$query->bindValue(':login', $login, PDO::PARAM_STR);
 	$query->bindValue(':password', $password, PDO::PARAM_STR);
-	$query->bindValue(':email', $_POST['email'], PDO::PARAM_STR);
-	$query->bindValue(':date', time(), PDO::PARAM_STR);
+	$query->bindValue(':email', $email, PDO::PARAM_STR);
+	$query->bindValue(':date', $date, PDO::PARAM_STR);
 	$query->execute();
 }
 
+?>
+
+<form method="POST">
+	<label for="">Login</label>
+	<input type="text" name="login"><br>
+	<label for="">Mot de passe</label>
+	<input type="text" name="password"><br>
+	<button name="loginValid">Se connecter</button>
+</form>
+
+<?php
+if(isset($_POST['loginValid'])){
+	$login = $_POST['login'];
+	$password = $_POST['password'];
+	$options = array('cost' => 10);
+	if(!empty($login) && !empty($password)){
+		$query = $db->prepare("SELECT * FROM user WHERE login = :login");
+		$query->bindValue(":login", $login, PDO::PARAM_STR);
+		$query->execute();
+		var_dump($query->rowCount());
+		if($query->rowCount()){
+			$user = $query->fetch();
+			$valid = password_verify($password, $user['password']);
+			if($valid){
+				echo "SESSION";
+			} else{
+				echo "Le mot de passe n'est pas bon";
+			}
+		} else {
+			echo "L'utilisateur n'existe pas.";
+		}
+	}
+}
 ?>
