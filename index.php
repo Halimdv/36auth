@@ -1,7 +1,11 @@
 <?php
 require 'config.php';
 
+
+var_dump($_SERVER);
+
 $valid = true;
+if(!isset($_SESSION['id'])){
 ?>
 
 <form method="POST">
@@ -43,21 +47,21 @@ $valid = true;
 </form>
 
 <?php
-if(isset($_POST['submit']) && $valid){
-	$options = array('cost' => 10);
-	$login = trim($_POST['login']);
-	$password = password_hash( trim($_POST['password']), PASSWORD_DEFAULT, $options);
-	$email = trim($_POST['email']);
-	$date = time();
-	echo "ok";
-	$query = $db->prepare("INSERT INTO user(login, password,  email, date)
-	 VALUES(:login, :password, :email, :date)");
-	$query->bindValue(':login', $login, PDO::PARAM_STR);
-	$query->bindValue(':password', $password, PDO::PARAM_STR);
-	$query->bindValue(':email', $email, PDO::PARAM_STR);
-	$query->bindValue(':date', $date, PDO::PARAM_STR);
-	$query->execute();
-}
+	if(isset($_POST['submit']) && $valid){
+		$options = array('cost' => 10);
+		$login = trim($_POST['login']);
+		$password = password_hash( trim($_POST['password']), PASSWORD_DEFAULT, $options);
+		$email = trim($_POST['email']);
+		$date = time();
+		echo "ok";
+		$query = $db->prepare("INSERT INTO user(login, password,  email, date)
+		 VALUES(:login, :password, :email, :date)");
+		$query->bindValue(':login', $login, PDO::PARAM_STR);
+		$query->bindValue(':password', $password, PDO::PARAM_STR);
+		$query->bindValue(':email', $email, PDO::PARAM_STR);
+		$query->bindValue(':date', $date, PDO::PARAM_STR);
+		$query->execute();
+	}
 
 ?>
 
@@ -70,26 +74,31 @@ if(isset($_POST['submit']) && $valid){
 </form>
 
 <?php
-if(isset($_POST['loginValid'])){
-	$login = $_POST['login'];
-	$password = $_POST['password'];
-	$options = array('cost' => 10);
-	if(!empty($login) && !empty($password)){
-		$query = $db->prepare("SELECT * FROM user WHERE login = :login");
-		$query->bindValue(":login", $login, PDO::PARAM_STR);
-		$query->execute();
-		var_dump($query->rowCount());
-		if($query->rowCount()){
-			$user = $query->fetch();
-			$valid = password_verify($password, $user['password']);
-			if($valid){
-				echo "SESSION";
-			} else{
-				echo "Le mot de passe n'est pas bon";
+	if(isset($_POST['loginValid'])){
+		$login = $_POST['login'];
+		$password = $_POST['password'];
+		$options = array('cost' => 10);
+		if(!empty($login) && !empty($password)){
+			$query = $db->prepare("SELECT * FROM user WHERE login = :login");
+			$query->bindValue(":login", $login, PDO::PARAM_STR);
+			$query->execute();
+			var_dump($query->rowCount());
+			if($query->rowCount()){
+				$user = $query->fetch();
+				$valid = password_verify($password, $user['password']);
+				if($valid){
+					$_SESSION['id'] = $user['id'];
+					$_SESSION['login'] = $user['login'];
+					header('location: '.$url);
+				} else{
+					echo "Le mot de passe n'est pas bon";
+				}
+			} else {
+				echo "L'utilisateur n'existe pas.";
 			}
-		} else {
-			echo "L'utilisateur n'existe pas.";
 		}
 	}
+} else {
+	echo "Bonjour ".$_SESSION['login'];
 }
 ?>
