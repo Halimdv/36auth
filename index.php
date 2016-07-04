@@ -44,14 +44,15 @@ $valid = true;
 
 <?php
 if(isset($_POST['submit']) && $valid){
+	$options = array('cost' => 10);
+	$password = password_hash( $_POST['password'], PASSWORD_DEFAULT, $options);
 	echo "ok";
-	$date = new DateTime('now');
 	$query = $db->prepare("INSERT INTO user(login, password,  email, date)
 	 VALUES(:login, :password, :email, :date)");
 	$query->bindValue(':login', $_POST['login'], PDO::PARAM_STR);
-	$query->bindValue(':password', $_POST['password'], PDO::PARAM_STR);
+	$query->bindValue(':password', $password, PDO::PARAM_STR);
 	$query->bindValue(':email', $_POST['email'], PDO::PARAM_STR);
-	$query->bindValue(':date', $date->format('Y-m-d H:i:s'), PDO::PARAM_STR);
+	$query->bindValue(':date', time(), PDO::PARAM_STR);
 	$query->execute();
 }
 
