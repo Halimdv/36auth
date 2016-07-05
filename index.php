@@ -1,9 +1,19 @@
 <?php
 require 'config.php';
 
-setcookie('cookie', 'test', time()+60*60*24*365, "/cours/36auth", "localhost", FALSE, TRUE);
 
 $valid = true;
+
+if(!isset($_SESSION['id']) && !isset($_SESSION['login'])){
+		if(isset($_COOKIE['remember'])){
+			$token = $_COOKIE['remember'];
+			$query = $db->query("SELECT * FROM user WHERE token = '$token'"); 
+			$user = $query->fetch();
+			$_SESSION['id'] = $user['id'];
+			$_SESSION['login'] = $user['login'];
+		}
+}
+
 if(!isset($_SESSION['id'])){
 ?>
 
@@ -86,6 +96,7 @@ if(!isset($_SESSION['id'])){
 
 <?php
 	if(isset($_POST['loginValid'])){
+
 		$login = $_POST['login'];
 		$password = $_POST['password'];
 		$options = array('cost' => 10);
@@ -93,7 +104,6 @@ if(!isset($_SESSION['id'])){
 			$query = $db->prepare("SELECT * FROM user WHERE login = :login");
 			$query->bindValue(":login", $login, PDO::PARAM_STR);
 			$query->execute();
-			var_dump($query->rowCount());
 			if($query->rowCount()){
 				$user = $query->fetch();
 				$valid = password_verify($password, $user['password']);
@@ -101,7 +111,7 @@ if(!isset($_SESSION['id'])){
 					if(isset($_POST['remember'])){
 						$token = sha1(md5(uniqid().$_SERVER['REMOTE_ADDR']));
 						setcookie('remember', $token , time()+60*60*24);
-						$db->query('UPDATE FROM user SET token = $token WHERE id = '.$user['id']);
+						$db->query("UPDATE user SET token = '$token' WHERE id = ".$user['id']);
 					}
 					$_SESSION['id'] = $user['id'];
 					$_SESSION['login'] = $user['login'];
