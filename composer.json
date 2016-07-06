@@ -1,0 +1,12 @@
+{
+    "name": "webforce/36auth",
+    "authors": [
+        {
+            "name": "Halimdv",
+            "email": "deville.halim@gmail.com"
+        }
+    ],
+    "require": {
+        "phpmailer/phpmailer": "^5.2"
+    }
+}
