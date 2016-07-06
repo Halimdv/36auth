@@ -22,12 +22,15 @@ if(isset($_GET['forgetToken'])){
 	<?php 
 		if(isset($_POST['changePassword'])){
 			$user = $checkUser->fetch();
-			$query = $db->prepare("UPDATE user SET password = :password WHERE id='".$user['id']."'");
+			$query = $db->prepare("UPDATE user SET password = :password WHERE id= :id");
 			$password = password_hash( trim($_POST['password']), PASSWORD_BCRYPT);
 			$query->bindValue(':password', $password, PDO::PARAM_STR);
 			$query->bindValue(':id', $user['id'], PDO::PARAM_INT);
 			if($query->execute()){
+
 				echo "Votre mot de passe a été mis à jour";
+				
+
 			}
 
 		}
@@ -64,6 +67,19 @@ if(isset($_POST['forget'])){
 		$db->query("UPDATE user SET forget = '$forget' WHERE id = ".$user['id']);
 		echo "Bonjour ".$login.", vous pouvez redéfinir votre mot de passe sur 
 		<a href='".$url."?forgetToken=".$forget."'>".$url."?forgetToken=".$forget."</a>";
+
+		$mail = new PHPMailer();
+		$mail->setFrom('no-reply@localhost.com' , 'Admin Localhost');
+		$mail->addAdress($user['email']);
+		$mail->Subject = 'Oubli de mot de passe';
+		$mail->Body = "Bonjour ".$login.", vous pouvez redéfinir votre mot de passe sur 
+		<a href='".$url."?forgetToken=".$forget."'>".$url."?forgetToken=".$forget."</a>";
+		var_dump($mail);
+		if($mail->send()){
+			echo "Vous allez recevoir un lien pour redéfinir votre mot de passe.";
+		} else {
+			echo "Problème";
+		}
 	} else {
 		echo "L'utilisateur n'existe pas";
 	}
